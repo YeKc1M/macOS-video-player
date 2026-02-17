@@ -24,8 +24,8 @@ final class PlayerViewModel {
     @ObservationIgnored private var saveTimer: Timer?
 
     init() {
-        // Save progress periodically every 5 seconds
-        saveTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        // Save progress periodically every 0.5 seconds
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.saveCurrentProgress()
             }
