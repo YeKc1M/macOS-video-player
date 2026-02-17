@@ -3,6 +3,9 @@ import SwiftUI
 struct PlaylistView: View {
     let playlist: [VideoFile]
     let currentVideo: VideoFile?
+    let videoDurations: [URL: Double]
+    let currentTime: Double
+    let currentVideoURL: URL?
     let onSelect: (VideoFile) -> Void
 
     var body: some View {
@@ -42,9 +45,19 @@ struct PlaylistView: View {
                         Image(systemName: currentVideo?.id == video.id ? "play.fill" : "film")
                             .foregroundStyle(currentVideo?.id == video.id ? .blue : .secondary)
                             .frame(width: 16)
-                        Text(video.name)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(video.name)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            if let duration = videoDurations[video.url] {
+                                let progress = video.url == currentVideoURL
+                                    ? currentTime
+                                    : ProgressStore.load(for: video.url)
+                                Text("\(formatTime(progress)) / \(formatTime(duration))")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
                     }
                     .padding(.vertical, 2)
                 }
@@ -52,5 +65,17 @@ struct PlaylistView: View {
             }
         }
         .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        guard seconds.isFinite && seconds >= 0 else { return "0:00" }
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let secs = totalSeconds % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, secs)
+        }
+        return String(format: "%d:%02d", minutes, secs)
     }
 }
