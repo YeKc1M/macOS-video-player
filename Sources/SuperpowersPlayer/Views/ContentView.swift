@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct ContentView: View {
@@ -18,6 +19,7 @@ struct ContentView: View {
                         currentTime: viewModel.currentTime,
                         duration: viewModel.duration,
                         playbackSpeed: viewModel.playbackSpeed,
+                        volume: viewModel.volume,
                         onTogglePlayPause: { viewModel.togglePlayPause() },
                         onSeek: { viewModel.seek(to: $0) },
                         onIncreaseSpeed: { viewModel.increaseSpeed() },
@@ -54,10 +56,48 @@ struct ContentView: View {
             PlaylistView(
                 playlist: viewModel.playlist,
                 currentVideo: viewModel.currentVideo,
+                videoDurations: viewModel.videoDurations,
+                currentTime: viewModel.currentTime,
+                currentVideoURL: viewModel.currentVideo?.url,
                 onSelect: { viewModel.selectVideo($0) }
             )
         }
         .frame(minWidth: 800, minHeight: 500)
+        .focusable()
+        .onKeyPress(.leftArrow) {
+            viewModel.seek(to: viewModel.currentTime - 5)
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            viewModel.seek(to: viewModel.currentTime + 5)
+            return .handled
+        }
+        .onKeyPress(.upArrow) {
+            viewModel.increaseVolume()
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            viewModel.decreaseVolume()
+            return .handled
+        }
+        .onKeyPress(.pageUp) {
+            guard viewModel.playlist.count > 1 else { return .handled }
+            viewModel.playPrevious()
+            return .handled
+        }
+        .onKeyPress(.pageDown) {
+            guard viewModel.playlist.count > 1 else { return .handled }
+            viewModel.playNext()
+            return .handled
+        }
+        .onKeyPress(characters: CharacterSet(charactersIn: "[]")) { press in
+            if press.characters == "[" {
+                viewModel.decreaseSpeed()
+            } else if press.characters == "]" {
+                viewModel.increaseSpeed()
+            }
+            return .handled
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openFile)) { _ in
             viewModel.openFile()
         }
