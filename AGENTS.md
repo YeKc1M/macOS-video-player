@@ -149,3 +149,10 @@ Sources/SuperpowersPlayer/
 4. **Single source of truth** — `PlayerViewModel` is the only stateful object
 5. **Persist progress automatically** — save on timer, on switch, and on termination
 6. **Clean up resources** — always remove observers, invalidate timers
+
+## Active Technologies
+- Swift 5.9, swift-tools-version:5.9 + SwiftUI, AVFoundation, AVKit, AppKit (system only) (001-player-enhancements)
+- UserDefaults via `ProgressStore` (existing) (001-player-enhancements)
+
+## Recent Changes
+- 001-player-enhancements: Added Swift 5.9, swift-tools-version:5.9 + SwiftUI, AVFoundation, AVKit, AppKit (system only)
