@@ -5,6 +5,7 @@ struct ControlsView: View {
     let currentTime: Double
     let duration: Double
     let playbackSpeed: Float
+    let volume: Float
     let onTogglePlayPause: () -> Void
     let onSeek: (Double) -> Void
     let onIncreaseSpeed: () -> Void
@@ -47,6 +48,15 @@ struct ControlsView: View {
                     .font(.system(.body, design: .monospaced))
                     .foregroundStyle(.secondary)
 
+                // Volume display
+                HStack(spacing: 4) {
+                    Image(systemName: volumeIconName)
+                        .font(.body)
+                    Text(String(format: "%.0f%%", volume * 100))
+                        .font(.system(.body, design: .monospaced))
+                }
+                .foregroundStyle(.secondary)
+
                 Spacer()
 
                 // Speed controls
@@ -73,6 +83,18 @@ struct ControlsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    private var volumeIconName: String {
+        if volume == 0 {
+            return "speaker.slash"
+        } else if volume <= 0.33 {
+            return "speaker.wave.1"
+        } else if volume <= 0.66 {
+            return "speaker.wave.2"
+        } else {
+            return "speaker.wave.3"
+        }
     }
 
     private func formatTime(_ seconds: Double) -> String {
