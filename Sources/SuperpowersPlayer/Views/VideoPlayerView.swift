@@ -1,13 +1,17 @@
 import AVKit
 import SwiftUI
 
+private class NonFocusablePlayerView: AVPlayerView {
+    override var acceptsFirstResponder: Bool { false }
+}
+
 struct VideoPlayerView: NSViewRepresentable {
     let player: AVPlayer
 
     func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
+        let view = NonFocusablePlayerView()
         view.player = player
-        view.controlsStyle = .none  // We provide our own controls
+        view.controlsStyle = .none
         view.showsFullScreenToggleButton = false
         view.videoGravity = .resizeAspect
         return view
