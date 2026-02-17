@@ -13,6 +13,8 @@ final class PlayerViewModel {
     var currentTime: Double = 0
     var duration: Double = 0
     var playbackSpeed: Float = 1.0
+    var volume: Float = 1.0
+    var videoDurations: [URL: Double] = [:]
 
     // MARK: - Non-observable AVFoundation objects
     @ObservationIgnored private(set) var player = AVPlayer()
@@ -54,6 +56,9 @@ final class PlayerViewModel {
             let video = VideoFile(url: url)
             playlist = [video]
             selectVideo(video)
+            Task { [weak self] in
+                await self?.loadPlaylistDurations()
+            }
         }
     }
 
@@ -69,6 +74,9 @@ final class PlayerViewModel {
             playlist = files
             if let first = files.first {
                 selectVideo(first)
+            }
+            Task { [weak self] in
+                await self?.loadPlaylistDurations()
             }
         }
     }
@@ -134,11 +142,12 @@ final class PlayerViewModel {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.isPlaying = false
                 // Clear progress since video finished
                 if let video = self.currentVideo {
                     ProgressStore.clear(for: video.url)
                 }
+                // Auto-advance to next video
+                self.playNext()
             }
         }
     }
@@ -186,6 +195,68 @@ final class PlayerViewModel {
         if isPlaying {
             player.rate = playbackSpeed
         }
+    }
+
+    // MARK: - Volume Control
+
+    func increaseVolume() {
+        let newVolume = min(volume + 0.05, 1.0)
+        volume = (newVolume * 20).rounded() / 20
+        player.volume = volume
+    }
+
+    func decreaseVolume() {
+        let newVolume = max(volume - 0.05, 0.0)
+        volume = (newVolume * 20).rounded() / 20
+        player.volume = volume
+    }
+
+    // MARK: - Playlist Navigation
+
+    func playNext() {
+        guard !playlist.isEmpty, let currentVideo else { return }
+        guard let index = playlist.firstIndex(of: currentVideo) else { return }
+        let nextIndex = (index + 1) % playlist.count
+        selectVideo(playlist[nextIndex])
+    }
+
+    func playPrevious() {
+        guard !playlist.isEmpty, let currentVideo else { return }
+        guard let index = playlist.firstIndex(of: currentVideo) else { return }
+        let previousIndex = (index - 1 + playlist.count) % playlist.count
+        selectVideo(playlist[previousIndex])
+    }
+
+    // MARK: - Duration Loading
+
+    func loadPlaylistDurations() async {
+        let videos = playlist
+        let results = await withTaskGroup(of: (URL, Double?).self) { group in
+            for video in videos {
+                group.addTask { [weak self] in
+                    guard self != nil else { return (video.url, nil) }
+                    do {
+                        let asset = AVURLAsset(url: video.url)
+                        let duration = try await asset.load(.duration)
+                        let seconds = duration.seconds
+                        if seconds.isFinite {
+                            return (video.url, seconds)
+                        }
+                        return (video.url, nil)
+                    } catch {
+                        return (video.url, nil)
+                    }
+                }
+            }
+            var collected: [URL: Double] = [:]
+            for await (url, dur) in group {
+                if let dur {
+                    collected[url] = dur
+                }
+            }
+            return collected
+        }
+        videoDurations = results
     }
 
     // MARK: - Progress Persistence
