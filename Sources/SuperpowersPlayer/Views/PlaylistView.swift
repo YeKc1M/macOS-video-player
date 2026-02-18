@@ -33,35 +33,49 @@ struct PlaylistView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                List(playlist, selection: Binding<VideoFile.ID?>(
-                    get: { currentVideo?.id },
-                    set: { id in
-                        if let id, let video = playlist.first(where: { $0.id == id }) {
-                            onSelect(video)
+                ScrollViewReader { proxy in
+                    List(playlist, selection: Binding<VideoFile.ID?>(
+                        get: { currentVideo?.id },
+                        set: { id in
+                            if let id, let video = playlist.first(where: { $0.id == id }) {
+                                onSelect(video)
+                            }
+                        }
+                    )) { video in
+                        HStack {
+                            Image(systemName: currentVideo?.id == video.id ? "play.fill" : "film")
+                                .foregroundStyle(currentVideo?.id == video.id ? .blue : .secondary)
+                                .frame(width: 16)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(video.name)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                if let duration = videoDurations[video.url] {
+                                    let progress = video.url == currentVideoURL
+                                        ? currentTime
+                                        : ProgressStore.load(for: video.url)
+                                    Text("\(formatTime(progress)) / \(formatTime(duration))")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .listStyle(.sidebar)
+                    .onAppear {
+                        if let currentVideo {
+                            proxy.scrollTo(currentVideo.id, anchor: .center)
                         }
                     }
-                )) { video in
-                    HStack {
-                        Image(systemName: currentVideo?.id == video.id ? "play.fill" : "film")
-                            .foregroundStyle(currentVideo?.id == video.id ? .blue : .secondary)
-                            .frame(width: 16)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(video.name)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            if let duration = videoDurations[video.url] {
-                                let progress = video.url == currentVideoURL
-                                    ? currentTime
-                                    : ProgressStore.load(for: video.url)
-                                Text("\(formatTime(progress)) / \(formatTime(duration))")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                    .onChange(of: currentVideo) { _, newVideo in
+                        if let newVideo {
+                            withAnimation {
+                                proxy.scrollTo(newVideo.id, anchor: .center)
                             }
                         }
                     }
-                    .padding(.vertical, 2)
                 }
-                .listStyle(.sidebar)
             }
         }
         .frame(minWidth: 200, idealWidth: 250, maxWidth: 300)

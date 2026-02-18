@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 struct ContentView: View {
@@ -98,11 +97,9 @@ struct ContentView: View {
             }
             return .handled
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openFile)) { _ in
-            viewModel.openFile()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
-            viewModel.openFolder()
-        }
+        .focusedValue(\.playerActions, PlayerActions(
+            openFile: { viewModel.openFile() },
+            openFolder: { viewModel.openFolder() }
+        ))
     }
 }
