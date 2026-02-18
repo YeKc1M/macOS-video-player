@@ -15,6 +15,14 @@ final class PlayerViewModel {
     var playbackSpeed: Float = 1.0
     var volume: Float = 1.0
     var videoDurations: [URL: Double] = [:]
+    var keyBindings: [PlayerAction: StoredKeyBinding] = {
+        if let saved = ShortcutStore.load() {
+            return saved
+        }
+        return Dictionary(
+            uniqueKeysWithValues: PlayerAction.allCases.map { ($0, $0.defaultBinding) }
+        )
+    }()
 
     // MARK: - Non-observable AVFoundation objects
     @ObservationIgnored private(set) var player = AVPlayer()
@@ -215,6 +223,51 @@ final class PlayerViewModel {
         let newVolume = max(volume - 0.05, 0.0)
         volume = (newVolume * 20).rounded() / 20
         player.volume = volume
+    }
+
+    // MARK: - Keyboard Shortcut Handling
+
+    /// Handle a key press by hardware key code. Returns true if the key was consumed.
+    func handleKeyCode(_ keyCode: UInt16) -> Bool {
+        let code = Int(keyCode)
+        guard let action = keyBindings.first(where: { $0.value.keyCode == code })?.key
+        else { return false }
+
+        switch action {
+        case .seekBackward:
+            seek(to: currentTime - 5)
+        case .seekForward:
+            seek(to: currentTime + 5)
+        case .volumeDown:
+            decreaseVolume()
+        case .volumeUp:
+            increaseVolume()
+        case .previousVideo:
+            guard playlist.count > 1 else { return true }
+            playPrevious()
+        case .nextVideo:
+            guard playlist.count > 1 else { return true }
+            playNext()
+        case .decreaseSpeed:
+            decreaseSpeed()
+        case .increaseSpeed:
+            increaseSpeed()
+        case .togglePlayPause:
+            togglePlayPause()
+        }
+        return true
+    }
+
+    func updateKeyBindings(_ bindings: [PlayerAction: StoredKeyBinding]) {
+        keyBindings = bindings
+        ShortcutStore.save(bindings)
+    }
+
+    func resetKeyBindings() {
+        keyBindings = Dictionary(
+            uniqueKeysWithValues: PlayerAction.allCases.map { ($0, $0.defaultBinding) }
+        )
+        ShortcutStore.clear()
     }
 
     // MARK: - Playlist Navigation

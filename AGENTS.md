@@ -56,6 +56,7 @@ Sources/SuperpowersPlayer/
   AppDelegate.swift             # NSApplicationDelegate (activation policy)
   Models/
     VideoFile.swift             # Video file model, directory scanning
+    KeyBinding.swift            # PlayerAction enum, StoredKeyBinding model
   ViewModels/
     PlayerViewModel.swift       # Core playback logic, AVPlayer management
   Views/
@@ -63,8 +64,11 @@ Sources/SuperpowersPlayer/
     VideoPlayerView.swift       # NSViewRepresentable wrapping AVPlayerView
     ControlsView.swift          # Play/pause, seek bar, speed controls
     PlaylistView.swift          # Sidebar playlist with selection
+    ShortcutSettingsView.swift  # Settings sheet for customizing keyboard shortcuts
+    KeyRecorderView.swift       # Key capture button for recording shortcut keys
   Services/
     ProgressStore.swift         # UserDefaults-based playback position persistence
+    ShortcutStore.swift         # UserDefaults-based keyboard shortcut persistence
 ```
 
 ## Architecture

@@ -41,7 +41,6 @@ struct ControlsView: View {
                         .font(.title2)
                 }
                 .buttonStyle(.plain)
-                .keyboardShortcut(.space, modifiers: [])
 
                 // Time display
                 Text("\(formatTime(isSeeking ? seekTime : currentTime)) / \(formatTime(duration))")

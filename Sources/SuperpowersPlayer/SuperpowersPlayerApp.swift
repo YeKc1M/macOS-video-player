@@ -17,6 +17,11 @@ extension FocusedValues {
 struct PlayerActions {
     let openFile: () -> Void
     let openFolder: () -> Void
+    let viewModel: PlayerViewModel
+}
+
+extension Notification.Name {
+    static let showShortcutSettings = Notification.Name("showShortcutSettings")
 }
 
 @main
@@ -39,6 +44,14 @@ struct SuperpowersPlayerApp: App {
                     playerActions?.openFolder()
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
+            }
+            CommandGroup(replacing: .appSettings) {
+                Button("Keyboard Shortcuts...") {
+                    NotificationCenter.default.post(
+                        name: .showShortcutSettings, object: nil
+                    )
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
         }
     }

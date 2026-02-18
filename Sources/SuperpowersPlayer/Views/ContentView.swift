@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var viewModel = PlayerViewModel()
+    @State private var showingSettings = false
+    @State private var keyMonitor: Any?
 
     var body: some View {
         HSplitView {
@@ -62,44 +64,45 @@ struct ContentView: View {
             )
         }
         .frame(minWidth: 800, minHeight: 500)
-        .focusable()
-        .onKeyPress(.leftArrow) {
-            viewModel.seek(to: viewModel.currentTime - 5)
-            return .handled
-        }
-        .onKeyPress(.rightArrow) {
-            viewModel.seek(to: viewModel.currentTime + 5)
-            return .handled
-        }
-        .onKeyPress(.upArrow) {
-            viewModel.increaseVolume()
-            return .handled
-        }
-        .onKeyPress(.downArrow) {
-            viewModel.decreaseVolume()
-            return .handled
-        }
-        .onKeyPress(.pageUp) {
-            guard viewModel.playlist.count > 1 else { return .handled }
-            viewModel.playPrevious()
-            return .handled
-        }
-        .onKeyPress(.pageDown) {
-            guard viewModel.playlist.count > 1 else { return .handled }
-            viewModel.playNext()
-            return .handled
-        }
-        .onKeyPress(characters: CharacterSet(charactersIn: "[]")) { press in
-            if press.characters == "[" {
-                viewModel.decreaseSpeed()
-            } else if press.characters == "]" {
-                viewModel.increaseSpeed()
-            }
-            return .handled
-        }
         .focusedValue(\.playerActions, PlayerActions(
             openFile: { viewModel.openFile() },
-            openFolder: { viewModel.openFolder() }
+            openFolder: { viewModel.openFolder() },
+            viewModel: viewModel
         ))
+        .sheet(isPresented: $showingSettings) {
+            ShortcutSettingsView(
+                bindings: viewModel.keyBindings,
+                onSave: { viewModel.updateKeyBindings($0) },
+                onReset: { viewModel.resetKeyBindings() }
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showShortcutSettings)) { _ in
+            showingSettings = true
+        }
+        .onAppear { installKeyMonitor() }
+        .onDisappear { removeKeyMonitor() }
+    }
+
+    private func installKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if let responder = NSApp.keyWindow?.firstResponder,
+               responder is NSText {
+                return event
+            }
+            if NSApp.keyWindow?.attachedSheet != nil {
+                return event
+            }
+            if viewModel.handleKeyCode(event.keyCode) {
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
     }
 }
