@@ -72,8 +72,14 @@ final class PlayerViewModel {
         if panel.runModal() == .OK, let url = panel.url {
             let files = VideoFile.scanDirectory(url)
             playlist = files
-            if let first = files.first {
-                selectVideo(first)
+            if !files.isEmpty {
+                let calendar = Calendar.current
+                let now = Date()
+                let year = calendar.component(.year, from: now)
+                let month = calendar.component(.month, from: now)
+                let day = calendar.component(.day, from: now)
+                let index = (year * month / day) % files.count
+                selectVideo(files[index])
             }
             Task { [weak self] in
                 await self?.loadPlaylistDurations()
