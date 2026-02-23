@@ -4,6 +4,7 @@ struct ContentView: View {
     @State private var viewModel = PlayerViewModel()
     @State private var showingSettings = false
     @State private var keyMonitor: Any?
+    @State private var hostWindow: NSWindow?
 
     var body: some View {
         HSplitView {
@@ -81,15 +82,19 @@ struct ContentView: View {
         }
         .onAppear { installKeyMonitor() }
         .onDisappear { removeKeyMonitor() }
+        .background(WindowAccessor(window: $hostWindow))
     }
 
     private func installKeyMonitor() {
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if let responder = NSApp.keyWindow?.firstResponder,
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [self] event in
+            guard let hostWindow, event.window === hostWindow else {
+                return event
+            }
+            if let responder = hostWindow.firstResponder,
                responder is NSText {
                 return event
             }
-            if NSApp.keyWindow?.attachedSheet != nil {
+            if hostWindow.attachedSheet != nil {
                 return event
             }
             if viewModel.handleKeyCode(event.keyCode) {
@@ -103,6 +108,26 @@ struct ContentView: View {
         if let monitor = keyMonitor {
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
+        }
+    }
+}
+
+// MARK: - Window Accessor
+
+private struct WindowAccessor: NSViewRepresentable {
+    @Binding var window: NSWindow?
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            self.window = view.window
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            self.window = nsView.window
         }
     }
 }
