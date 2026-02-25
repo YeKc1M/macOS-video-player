@@ -328,6 +328,16 @@ final class PlayerViewModel {
 
     // MARK: - Cleanup
 
+    func tearDown() {
+        saveCurrentProgress()
+        player.pause()
+        player.replaceCurrentItem(with: nil)
+        cleanupObservers()
+        saveTimer?.invalidate()
+        saveTimer = nil
+        isPlaying = false
+    }
+
     private func cleanupObservers() {
         if let timeObserver {
             player.removeTimeObserver(timeObserver)
@@ -342,6 +352,7 @@ final class PlayerViewModel {
     }
 
     deinit {
+        player.pause()
         saveTimer?.invalidate()
         if let timeObserver { player.removeTimeObserver(timeObserver) }
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }

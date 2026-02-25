@@ -81,7 +81,10 @@ struct ContentView: View {
             showingSettings = true
         }
         .onAppear { installKeyMonitor() }
-        .onDisappear { removeKeyMonitor() }
+        .onDisappear {
+            removeKeyMonitor()
+            viewModel.tearDown()
+        }
         .background(WindowAccessor(window: $hostWindow))
     }
 
